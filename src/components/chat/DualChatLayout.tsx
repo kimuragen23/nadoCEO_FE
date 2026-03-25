@@ -94,11 +94,11 @@ export function DualChatLayout() {
           </header>
 
           {/* Chat Split View */}
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0 bg-[#F4F5F0]">
-            <div className="flex-1 lg:w-[60%] lg:min-w-[400px] border-b lg:border-b-0 lg:border-r border-slate-200/60 z-10 flex flex-col h-[60vh] lg:h-auto">
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden bg-[#F4F5F0]">
+            <div className="flex-1 lg:w-[60%] lg:min-w-[400px] border-b lg:border-b-0 lg:border-r border-slate-200/60 z-10 flex flex-col min-h-0 h-[60vh] lg:h-auto">
               <MainChatPanel />
             </div>
-            <div className="flex-1 lg:w-[40%] lg:min-w-[300px] bg-white flex flex-col h-[40vh] lg:h-auto">
+            <div className="flex-1 lg:w-[40%] lg:min-w-[300px] bg-white flex flex-col min-h-0 h-[40vh] lg:h-auto">
               <SubChatPanel />
             </div>
           </div>
