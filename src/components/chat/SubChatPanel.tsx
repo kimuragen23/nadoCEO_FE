@@ -10,7 +10,7 @@ export function SubChatPanel() {
   const { input, setInput, sendMessage } = useChat('sub');
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-white">
       <div className="px-4 lg:px-6 py-3 lg:py-4 border-b border-slate-200/60 bg-white/80 backdrop-blur-md flex items-center justify-between shadow-sm z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-amber-100 rounded-xl border border-amber-200">
