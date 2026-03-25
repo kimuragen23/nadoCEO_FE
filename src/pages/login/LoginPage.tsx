@@ -5,8 +5,8 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { LogIn, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
-const KEYCLOAK_URL = 'http://localhost:30808';
-const REALM = 'nadoceo';
+// Vite proxy를 통해 Keycloak에 접근 (/auth → localhost:30808)
+const KEYCLOAK_TOKEN_URL = '/auth/realms/nadoceo/protocol/openid-connect/token';
 const CLIENT_ID = 'nadoceo-frontend';
 
 export function LoginPage() {
@@ -29,8 +29,7 @@ export function LoginPage() {
     setError('');
 
     try {
-      const tokenUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
-      const res = await fetch(tokenUrl, {
+      const res = await fetch(KEYCLOAK_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -106,7 +105,7 @@ export function LoginPage() {
                 placeholder="아이디를 입력하세요"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                className="h-11 rounded-xl border-slate-200 bg-white text-slate-900 focus:border-blue-500 focus:ring-blue-500"
                 autoFocus
               />
             </div>
@@ -119,7 +118,7 @@ export function LoginPage() {
                   placeholder="비밀번호를 입력하세요"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 pr-10"
+                  className="h-11 rounded-xl border-slate-200 bg-white text-slate-900 focus:border-blue-500 focus:ring-blue-500 pr-10"
                 />
                 <button
                   type="button"

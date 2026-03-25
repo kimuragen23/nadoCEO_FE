@@ -22,6 +22,11 @@ export default defineConfig(({mode}) => {
           target: 'http://localhost:21009',
           changeOrigin: true,
         },
+        '/auth': {
+          target: 'http://localhost:30808',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/auth/, ''),
+        },
       },
     },
   };
