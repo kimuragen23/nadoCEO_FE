@@ -1,104 +1,116 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getFaqs, FaqItem } from '../../api/client';
-import ReactMarkdown from 'react-markdown';
 import { ArrowLeft, Sparkles, ThumbsUp, ChevronDown, ChevronUp } from 'lucide-react';
 
+const API_BASE = '/api/v1';
 const DEFAULT_COURSE_ID = '00000000-0000-0000-0000-000000000001';
 
-function FaqCard({ faq }: { faq: FaqItem }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div
-      className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer"
-      onClick={() => setExpanded(!expanded)}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-bold text-slate-800 leading-snug flex-1">Q. {faq.question}</p>
-        <div className="flex items-center gap-2 shrink-0">
-          {faq.upvotes > 0 && (
-            <span className="inline-flex items-center bg-blue-50 text-blue-600 border border-blue-100 text-[10px] px-2 py-0.5 rounded-full font-medium">
-              <ThumbsUp className="w-3 h-3 mr-1" />
-              {faq.upvotes}
-            </span>
-          )}
-          <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-medium">
-            {faq.source === 'student' ? '학생' : '강사'}
-          </span>
-          {expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-        </div>
-      </div>
-
-      {expanded ? (
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <p className="text-xs font-semibold text-slate-400 mb-2">A.</p>
-          <div className="text-sm text-slate-700 leading-relaxed prose prose-sm prose-slate max-w-none">
-            <ReactMarkdown>{faq.answer}</ReactMarkdown>
-          </div>
-        </div>
-      ) : (
-        <p className="text-xs text-slate-400 mt-2 truncate">A. {faq.answer.split('\n')[0]}</p>
-      )}
-    </div>
-  );
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  upvotes: number;
+  source: string;
 }
 
 export function FaqListPage() {
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getFaqs(DEFAULT_COURSE_ID)
-      .then(setFaqs)
+    fetch(`${API_BASE}/faq/${DEFAULT_COURSE_ID}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
+      .then((data) => setFaqs(data))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', color: '#1e293b' }}>
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-slate-100 transition">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
+      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ maxWidth: '768px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button onClick={() => navigate(-1)} style={{ padding: '8px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'transparent' }}>
+            <ArrowLeft size={20} color="#475569" />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-xl">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-800">FAQ 모음</h1>
-              <p className="text-xs text-slate-500">코칭에서 축적된 질문과 답변</p>
-            </div>
+          <Sparkles size={20} color="#9333ea" />
+          <div>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>FAQ 모음</h1>
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>코칭에서 축적된 질문과 답변</p>
           </div>
-          <span className="ml-auto bg-purple-50 text-purple-600 border border-purple-100 text-xs px-3 py-1 rounded-full font-medium">
+          <span style={{ marginLeft: 'auto', backgroundColor: '#faf5ff', color: '#9333ea', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 500 }}>
             {faqs.length}개
           </span>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
-      <main className="max-w-3xl mx-auto px-6 py-6">
-        {loading && <p className="text-center text-slate-400 py-20">로딩 중...</p>}
-        {error && <p className="text-center text-red-500 py-20">{error}</p>}
+      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '24px' }}>
+        {loading && <p style={{ textAlign: 'center', color: '#94a3b8', padding: '80px 0' }}>로딩 중...</p>}
+        {error && <p style={{ textAlign: 'center', color: '#ef4444', padding: '80px 0' }}>오류: {error}</p>}
+
         {!loading && !error && faqs.length === 0 && (
-          <div className="text-center py-20">
-            <Sparkles className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-medium">아직 FAQ가 없습니다</p>
-            <p className="text-sm text-slate-400 mt-1">코칭에서 "도움됨"이나 "해결완료"를 누르면 FAQ로 저장됩니다</p>
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <p style={{ color: '#64748b', fontWeight: 500 }}>아직 FAQ가 없습니다</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '8px' }}>코칭에서 "도움됨"이나 "해결완료"를 누르면 FAQ로 저장됩니다</p>
           </div>
         )}
+
         {!loading && faqs.length > 0 && (
-          <div className="space-y-3">
-            {faqs.map((faq) => (
-              <FaqCard key={faq.id} faq={faq} />
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {faqs.map((faq) => {
+              const isOpen = expandedId === faq.id;
+              return (
+                <div
+                  key={faq.id}
+                  onClick={() => setExpandedId(isOpen ? null : faq.id)}
+                  style={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0, flex: 1 }}>Q. {faq.question}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {faq.upvotes > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', backgroundColor: '#eff6ff', color: '#2563eb', fontSize: '10px', padding: '2px 8px', borderRadius: '12px', fontWeight: 500 }}>
+                          <ThumbsUp size={12} style={{ marginRight: '4px' }} />
+                          {faq.upvotes}
+                        </span>
+                      )}
+                      <span style={{ backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '10px', padding: '2px 8px', borderRadius: '12px', fontWeight: 500 }}>
+                        {faq.source === 'student' ? '학생' : '강사'}
+                      </span>
+                      {isOpen ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
+                    </div>
+                  </div>
+
+                  {isOpen ? (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', marginBottom: '8px' }}>A.</p>
+                      <p style={{ fontSize: '14px', color: '#334155', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{faq.answer}</p>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      A. {faq.answer.split('\n')[0]}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
