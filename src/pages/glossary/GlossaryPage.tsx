@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { ArrowLeft, BookOpen, Search } from 'lucide-react';
+import { ArrowLeft, BookOpen, Search, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 const API_BASE = '/api/v1';
 
@@ -15,23 +15,44 @@ export function GlossaryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [expandedTerm, setExpandedTerm] = useState<string | null>(null);
+  const [termAnswer, setTermAnswer] = useState<string>('');
+  const [detailLoading, setDetailLoading] = useState(false);
   const { userId } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+    if (!userId) { setLoading(false); return; }
     fetch(`${API_BASE}/learning-path/glossary?studentId=${userId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('API error');
-        return res.json();
-      })
+      .then((res) => { if (!res.ok) throw new Error('API error'); return res.json(); })
       .then((data) => setTerms(data))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [userId]);
+
+  const handleToggleTerm = async (term: string) => {
+    if (expandedTerm === term) {
+      setExpandedTerm(null);
+      setTermAnswer('');
+      return;
+    }
+    setExpandedTerm(term);
+    setTermAnswer('');
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/learning-path/glossary/detail?studentId=${userId}&term=${encodeURIComponent(term)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTermAnswer(data.answer || '상세 내용이 없습니다.');
+      } else {
+        setTermAnswer('조회에 실패했습니다.');
+      }
+    } catch {
+      setTermAnswer('조회에 실패했습니다.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const filtered = search
     ? terms.filter((t) => t.term.toLowerCase().includes(search.toLowerCase()))
@@ -40,9 +61,7 @@ export function GlossaryPage() {
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
+    } catch { return ''; }
   };
 
   return (
@@ -73,18 +92,7 @@ export function GlossaryPage() {
             placeholder="용어 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: '100%',
-              paddingLeft: '40px',
-              height: '44px',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              backgroundColor: 'white',
-              color: '#1e293b',
-              fontSize: '14px',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            style={{ width: '100%', paddingLeft: '40px', height: '44px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#1e293b', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
       </div>
@@ -105,28 +113,39 @@ export function GlossaryPage() {
 
         {!loading && filtered.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {filtered.map((t, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '14px 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', backgroundColor: '#fffbeb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ color: '#d97706', fontWeight: 700, fontSize: '14px' }}>{t.term.charAt(0).toUpperCase()}</span>
+            {filtered.map((t, i) => {
+              const isOpen = expandedTerm === t.term;
+              return (
+                <div key={i} style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div
+                    onClick={() => handleToggleTerm(t.term)}
+                    style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '32px', height: '32px', backgroundColor: '#fffbeb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: '#d97706', fontWeight: 700, fontSize: '14px' }}>{t.term.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>{t.term}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>{formatDate(t.lastSearchedAt)}</span>
+                      {isOpen ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
+                    </div>
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>{t.term}</span>
+
+                  {isOpen && (
+                    <div style={{ padding: '0 20px 16px', borderTop: '1px solid #f1f5f9' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 600, color: '#d97706', marginTop: '12px', marginBottom: '8px' }}>AI 답변</p>
+                      {detailLoading ? (
+                        <p style={{ fontSize: '13px', color: '#94a3b8' }}>로딩 중...</p>
+                      ) : (
+                        <p style={{ fontSize: '14px', color: '#334155', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{termAnswer}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{formatDate(t.lastSearchedAt)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
