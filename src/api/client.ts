@@ -41,6 +41,7 @@ export interface FaqHitInfo {
   faqId: string;
   similarity: number;
   question: string;
+  answer?: string;
 }
 
 export function streamChat(

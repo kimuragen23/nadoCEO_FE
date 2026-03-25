@@ -2,6 +2,7 @@ export type FaqHit = {
   faqId: string;
   similarity: number; // 0~1
   question: string;
+  answer?: string;
   snippet?: string;
 };
 
