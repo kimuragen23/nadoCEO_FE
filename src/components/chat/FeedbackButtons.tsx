@@ -3,28 +3,53 @@ import { ThumbsUp, ThumbsDown, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { useChatStore } from '../../store/chatStore';
-import { submitFeedback } from '../../api/client';
+import { apiFetch } from '../../api/client';
 
-export function FeedbackButtons() {
+interface FeedbackButtonsProps {
+  messageIndex: number;
+}
+
+export function FeedbackButtons({ messageIndex }: FeedbackButtonsProps) {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [isResolved, setIsResolved] = useState(false);
+  const [loading, setLoading] = useState(false);
   const mainSessionId = useChatStore((s) => s.mainSessionId);
 
-  const handleResolved = async () => {
-    const next = !isResolved;
-    setIsResolved(next);
-
-    if (next && mainSessionId) {
-      try {
-        await submitFeedback({
+  const sendFeedback = async (type: 'up' | 'down' | 'resolved') => {
+    if (!mainSessionId || loading) return;
+    setLoading(true);
+    try {
+      await apiFetch('/chat/message-feedback', {
+        method: 'POST',
+        body: JSON.stringify({
           sessionId: mainSessionId,
-          resolved: true,
-          summary: '해결됨',
-        });
-      } catch (err) {
-        console.error('Feedback submit error:', err);
-      }
+          messageIndex,
+          feedbackType: type,
+        }),
+      });
+    } catch (err) {
+      console.error('Feedback error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleUp = async () => {
+    const next = feedback === 'up' ? null : 'up';
+    setFeedback(next);
+    if (next === 'up') await sendFeedback('up');
+  };
+
+  const handleDown = async () => {
+    const next = feedback === 'down' ? null : 'down';
+    setFeedback(next);
+    if (next === 'down') await sendFeedback('down');
+  };
+
+  const handleResolved = async () => {
+    if (isResolved) return;
+    setIsResolved(true);
+    await sendFeedback('resolved');
   };
 
   return (
@@ -32,7 +57,8 @@ export function FeedbackButtons() {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setFeedback(feedback === 'up' ? null : 'up')}
+        onClick={handleUp}
+        disabled={loading}
         className={cn(
           "h-8 px-3 rounded-full transition-all border border-transparent",
           feedback === 'up'
@@ -46,7 +72,8 @@ export function FeedbackButtons() {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setFeedback(feedback === 'down' ? null : 'down')}
+        onClick={handleDown}
+        disabled={loading}
         className={cn(
           "h-8 px-3 rounded-full transition-all border border-transparent",
           feedback === 'down'
@@ -64,6 +91,7 @@ export function FeedbackButtons() {
         variant="ghost"
         size="sm"
         onClick={handleResolved}
+        disabled={loading || isResolved}
         className={cn(
           "h-8 px-3 rounded-full transition-all border border-transparent",
           isResolved

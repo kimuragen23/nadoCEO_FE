@@ -7,7 +7,8 @@ import { Separator } from '../ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
-import { getSessionHistory, SessionSummary } from '../../api/client';
+import { getSessionHistory, getSession, SessionSummary } from '../../api/client';
+import { Message } from '../../types/chat';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -17,6 +18,7 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const [history, setHistory] = useState<SessionSummary[]>([]);
   const resetSession = useChatStore((s) => s.resetSession);
+  const restoreSession = useChatStore((s) => s.restoreSession);
   const { userId } = useAuthStore();
 
   useEffect(() => {
@@ -28,6 +30,22 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
   const handleNewSession = () => {
     resetSession();
+  };
+
+  const handleSelectSession = async (sessionId: string) => {
+    try {
+      const session = await getSession(sessionId);
+      const raw: Array<{ role: string; content: string }> = JSON.parse(session.messages || '[]');
+      const messages: Message[] = raw.map((m, i) => ({
+        id: `${sessionId}-${i}`,
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        createdAt: session.createdAt,
+      }));
+      restoreSession(sessionId, messages, session.totalTurns);
+    } catch (err) {
+      console.error('Failed to load session:', err);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -113,6 +131,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   render={
                     <Button
                       variant="ghost"
+                      onClick={() => handleSelectSession(item.id)}
                       className={cn(
                         "w-full justify-start gap-3 h-11 rounded-xl text-slate-600 hover:bg-white hover:text-blue-600 transition-all group border border-transparent hover:border-slate-200/60",
                         isCollapsed ? "px-0 justify-center" : "px-3"

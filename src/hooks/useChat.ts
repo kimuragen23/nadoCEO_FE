@@ -52,6 +52,16 @@ export function useChat(type: 'main' | 'sub') {
           store.appendStreamChunk('\n\n[오류가 발생했습니다. 다시 시도해주세요.]');
           store.setStreaming(false);
         },
+        (sessionId) => {
+          store.setMainSessionId(sessionId);
+        },
+        (faq) => {
+          store.addFaqHitToLastMessage({
+            faqId: faq.faqId,
+            similarity: faq.similarity,
+            question: faq.question,
+          });
+        },
       );
     } else {
       store.appendSubMessage(userMsg);
@@ -80,6 +90,9 @@ export function useChat(type: 'main' | 'sub') {
           console.error('Sub chat error:', err);
           store.appendSubStreamChunk('\n\n[오류가 발생했습니다.]');
           store.setSubStreaming(false);
+        },
+        (sessionId) => {
+          store.setSubSessionId(sessionId);
         },
       );
     }

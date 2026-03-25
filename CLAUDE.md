@@ -1,5 +1,11 @@
 # NADOCEO Coaching AI — Frontend
 
+## Rules
+
+- 코드 수정 후 반드시 git commit + push 할 것 (브랜치 전략: feature → develop → main)
+- 프론트 수정 시 `tsc --noEmit` 타입 체크 통과 확인할 것
+- Vite HMR로 자동 반영되지만, proxy 설정 변경 시 dev 서버 재시작 필요
+
 ## Project Overview
 
 IT 교육 현장에서 학생의 질문에 소크라테스식 대화로 코칭하는 AI 서비스의 프론트엔드.

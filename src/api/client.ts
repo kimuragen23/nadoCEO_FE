@@ -37,13 +37,24 @@ export interface ChatRequestBody {
   chatType?: string;
 }
 
+export interface FaqHitInfo {
+  faqId: string;
+  similarity: number;
+  question: string;
+}
+
 export function streamChat(
   body: ChatRequestBody,
   onChunk: (chunk: string) => void,
   onDone: () => void,
   onError: (err: Error) => void,
+  onSessionId?: (sessionId: string) => void,
+  onFaqHit?: (faq: FaqHitInfo) => void,
 ): AbortController {
   const controller = new AbortController();
+  // SSE data: prefix 후 %% → %로 변환될 수 있으므로 둘 다 처리
+  const isSessionId = (s: string) => s.includes('SESSION_ID%');
+  const isFaqHit = (s: string) => s.includes('FAQ_HIT%');
 
   fetch(`${API_BASE}/chat`, {
     method: 'POST',
@@ -63,10 +74,19 @@ export function streamChat(
         const text = decoder.decode(value, { stream: true });
         const lines = text.split('\n');
         for (const line of lines) {
-          if (line.startsWith('data:')) {
-            onChunk(line.slice(5));
-          } else if (line.trim().length > 0) {
-            onChunk(line);
+          const content = line.startsWith('data:') ? line.slice(5) : line.trim();
+          if (!content) continue;
+          if (isSessionId(content)) {
+            const id = content.replace(/^%+SESSION_ID%+/, '');
+            onSessionId?.(id);
+          } else if (isFaqHit(content)) {
+            try {
+              const jsonStr = content.replace(/^%+FAQ_HIT%+/, '');
+              const faq = JSON.parse(jsonStr);
+              onFaqHit?.(faq);
+            } catch {}
+          } else {
+            onChunk(content);
           }
         }
       }
@@ -94,7 +114,22 @@ export function submitFeedback(body: FeedbackBody) {
   });
 }
 
-// --- Session History API ---
+// --- Session API ---
+
+export interface SessionDetail {
+  id: string;
+  studentId: string;
+  courseId: string;
+  chatType: string;
+  messages: string; // JSON string
+  totalTurns: number;
+  resolved: boolean;
+  createdAt: string;
+}
+
+export function getSession(sessionId: string) {
+  return apiFetch<SessionDetail>(`/chat/${sessionId}`);
+}
 
 export interface SessionSummary {
   id: string;
