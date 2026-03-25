@@ -23,7 +23,7 @@ interface ChatStore {
   setSubSessionId: (id: string) => void;
   incrementTurn: () => void;
   resetSession: () => void;
-  restoreSession: (sessionId: string, messages: Message[], totalTurns: number) => void;
+  restoreSession: (sessionId: string, messages: Message[], totalTurns: number, subSessionId?: string, subMessages?: Message[]) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -106,11 +106,13 @@ export const useChatStore = create<ChatStore>((set) => ({
       searchedTerms: [],
     }),
 
-  restoreSession: (sessionId, messages, totalTurns) =>
+  restoreSession: (sessionId, messages, totalTurns, subSessionId?, subMessages?) =>
     set({
       mainSessionId: sessionId,
       mainMessages: messages,
       mainIsStreaming: false,
       currentTurn: totalTurns,
+      ...(subSessionId ? { subSessionId } : {}),
+      ...(subMessages ? { subMessages } : {}),
     }),
 }));

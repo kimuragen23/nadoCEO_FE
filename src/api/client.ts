@@ -132,6 +132,14 @@ export function getSession(sessionId: string) {
   return apiFetch<SessionDetail>(`/chat/${sessionId}`);
 }
 
+export async function getLatestSubSession(studentId: string): Promise<SessionDetail | null> {
+  const res = await fetch(`${API_BASE}/chat/sub-latest?studentId=${studentId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 204 || !res.ok) return null;
+  return res.json();
+}
+
 export interface SessionSummary {
   id: string;
   title: string;
