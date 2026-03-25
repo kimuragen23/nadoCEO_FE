@@ -60,6 +60,7 @@ export function useChat(type: 'main' | 'sub') {
             faqId: faq.faqId,
             similarity: faq.similarity,
             question: faq.question,
+            answer: faq.answer,
           });
         },
       );
