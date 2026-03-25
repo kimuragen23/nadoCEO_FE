@@ -23,10 +23,11 @@ export function ChatMessageList({ messages, isStreaming }: ChatMessageListProps)
           return <UserMessage key={msg.id} content={msg.content} />;
         }
         return (
-          <AiMessage 
-            key={msg.id} 
-            message={msg} 
-            isStreaming={isLast && isStreaming} 
+          <AiMessage
+            key={msg.id}
+            message={msg}
+            messageIndex={index}
+            isStreaming={isLast && isStreaming}
           />
         );
       })}

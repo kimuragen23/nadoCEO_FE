@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Message } from '../types/chat';
+import { Message, FaqHit } from '../types/chat';
 
 interface ChatStore {
   mainSessionId: string | null;
@@ -13,6 +13,7 @@ interface ChatStore {
 
   appendMainMessage: (msg: Message) => void;
   appendStreamChunk: (chunk: string) => void;
+  addFaqHitToLastMessage: (faq: FaqHit) => void;
   appendSubMessage: (msg: Message) => void;
   appendSubStreamChunk: (chunk: string) => void;
   addSearchedTerm: (term: string) => void;
@@ -22,6 +23,7 @@ interface ChatStore {
   setSubSessionId: (id: string) => void;
   incrementTurn: () => void;
   resetSession: () => void;
+  restoreSession: (sessionId: string, messages: Message[], totalTurns: number) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -48,6 +50,18 @@ export const useChatStore = create<ChatStore>((set) => ({
         content: lastMsg.content + chunk,
       };
 
+      return { mainMessages: updatedMessages };
+    }),
+
+  addFaqHitToLastMessage: (faq) =>
+    set((state) => {
+      const lastMsg = state.mainMessages[state.mainMessages.length - 1];
+      if (!lastMsg || lastMsg.role !== 'assistant') return state;
+      const updatedMessages = [...state.mainMessages];
+      updatedMessages[updatedMessages.length - 1] = {
+        ...lastMsg,
+        faqHits: [...(lastMsg.faqHits || []), faq],
+      };
       return { mainMessages: updatedMessages };
     }),
 
@@ -90,5 +104,13 @@ export const useChatStore = create<ChatStore>((set) => ({
       subIsStreaming: false,
       currentTurn: 0,
       searchedTerms: [],
+    }),
+
+  restoreSession: (sessionId, messages, totalTurns) =>
+    set({
+      mainSessionId: sessionId,
+      mainMessages: messages,
+      mainIsStreaming: false,
+      currentTurn: totalTurns,
     }),
 }));
