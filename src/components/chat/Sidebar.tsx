@@ -90,7 +90,6 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           } catch {}
         }
       }
-
       restoreSession(sessionId, messages, session.totalTurns, subSid, subMsgs);
     } catch (err) {
       console.error('Failed to load session:', err);

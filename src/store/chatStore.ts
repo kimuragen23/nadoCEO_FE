@@ -113,6 +113,6 @@ export const useChatStore = create<ChatStore>((set) => ({
       mainIsStreaming: false,
       currentTurn: totalTurns,
       ...(subSessionId ? { subSessionId } : {}),
-      ...(subMessages ? { subMessages } : {}),
+      ...(subMessages ? { subMessages, subIsStreaming: false } : {}),
     }),
 }));
