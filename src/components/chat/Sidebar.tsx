@@ -8,7 +8,7 @@ import { Separator } from '../ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
-import { getSessionHistory, getSession, SessionSummary } from '../../api/client';
+import { getSessionHistory, getSession, getLatestSubSession, SessionSummary } from '../../api/client';
 import { Message } from '../../types/chat';
 
 interface SidebarProps {
@@ -71,7 +71,26 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           createdAt: session.createdAt,
         };
       });
-      restoreSession(sessionId, messages, session.totalTurns);
+      // Sub 세션도 로드
+      let subSid: string | undefined;
+      let subMsgs: Message[] | undefined;
+      if (userId) {
+        const subSession = await getLatestSubSession(userId);
+        if (subSession) {
+          subSid = subSession.id;
+          try {
+            const subRaw = typeof subSession.messages === 'string'
+              ? JSON.parse(subSession.messages) : subSession.messages;
+            subMsgs = (subRaw as any[]).map((m: any, i: number) => ({
+              id: `sub-${subSession.id}-${i}`,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              createdAt: subSession.createdAt,
+            }));
+          } catch {}
+        }
+      }
+      restoreSession(sessionId, messages, session.totalTurns, subSid, subMsgs);
     } catch (err) {
       console.error('Failed to load session:', err);
     }
@@ -187,29 +206,23 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-slate-200/60 space-y-1">
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button variant="ghost" onClick={() => navigate('/faq')} className={cn("w-full justify-start gap-3 h-10 rounded-xl text-slate-600 hover:bg-purple-50 hover:text-purple-600", isCollapsed && "px-0 justify-center")} />
-            }
-          >
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            {!isCollapsed && <span className="text-sm font-medium">FAQ 모음</span>}
-          </TooltipTrigger>
-          {isCollapsed && <TooltipContent side="right">FAQ 모음</TooltipContent>}
-        </Tooltip>
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/faq')}
+          className={cn("w-full justify-start gap-3 h-10 rounded-xl text-slate-600 hover:bg-purple-50 hover:text-purple-600", isCollapsed && "px-0 justify-center")}
+        >
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          {!isCollapsed && <span className="text-sm font-medium">FAQ 모음</span>}
+        </Button>
 
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button variant="ghost" onClick={() => navigate('/glossary')} className={cn("w-full justify-start gap-3 h-10 rounded-xl text-slate-600 hover:bg-amber-50 hover:text-amber-600", isCollapsed && "px-0 justify-center")} />
-            }
-          >
-            <BookOpen className="w-4 h-4 text-amber-400" />
-            {!isCollapsed && <span className="text-sm font-medium">용어집</span>}
-          </TooltipTrigger>
-          {isCollapsed && <TooltipContent side="right">용어집</TooltipContent>}
-        </Tooltip>
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/glossary')}
+          className={cn("w-full justify-start gap-3 h-10 rounded-xl text-slate-600 hover:bg-amber-50 hover:text-amber-600", isCollapsed && "px-0 justify-center")}
+        >
+          <BookOpen className="w-4 h-4 text-amber-400" />
+          {!isCollapsed && <span className="text-sm font-medium">용어집</span>}
+        </Button>
       </div>
     </aside>
   );
