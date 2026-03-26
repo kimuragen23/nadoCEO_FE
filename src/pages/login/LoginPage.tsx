@@ -160,15 +160,6 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Test Accounts */}
-        <div className="mt-6 bg-white/50 rounded-xl border border-slate-200/40 p-4">
-          <p className="text-xs font-semibold text-slate-400 mb-2">테스트 계정</p>
-          <div className="space-y-1 text-xs text-slate-500">
-            <p><span className="font-medium text-slate-600">학생:</span> student01 / student01</p>
-            <p><span className="font-medium text-slate-600">강사:</span> instructor01 / instructor01</p>
-            <p><span className="font-medium text-slate-600">관리자:</span> admin / admin</p>
-          </div>
-        </div>
       </div>
     </div>
   );
